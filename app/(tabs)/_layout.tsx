@@ -5,6 +5,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NikaProvider } from '@/lib/nika-context';
 import { NikaChatProvider } from '@/lib/nika-chat-context';
+import { NikaSpeechProvider } from '@/lib/nika-speech-context';
 import { useNikaTheme } from '@/lib/nika-theme-context';
 
 function NikaTabIcon({ focused }: { focused: boolean }) {
@@ -135,7 +136,9 @@ export default function TabLayout() {
   return (
     <NikaProvider>
       <NikaChatProvider>
-        <TabsContent />
+        <NikaSpeechProvider>
+          <TabsContent />
+        </NikaSpeechProvider>
       </NikaChatProvider>
     </NikaProvider>
   );

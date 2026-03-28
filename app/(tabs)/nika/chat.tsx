@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TextInput, Pressable,
+  View, Text, ScrollView, TextInput, Pressable, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import { useNikaChat } from '@/lib/nika-chat-context';
 import { useNika } from '@/lib/nika-context';
 import { NikaAvatar } from '@/components/nika/nika-avatar';
 import { CorrectionCard } from '@/components/nika/correction-card';
+import { useNikaSpeech } from '@/lib/nika-speech-context';
 import { DS } from '@/constants/design';
 
 const QUICK_ACTIONS = [
@@ -28,12 +29,24 @@ export default function NikaChatScreen() {
   const insets = useSafeAreaInsets();
   const { messages, isLoading, sendMessage, mode, setMode } = useNikaChat();
   const { currentOutfit, recordEvent } = useNika();
+  const { isSpeaking, speak, speakIfAutoEnabled } = useNikaSpeech();
   const [input, setInput] = useState('');
   const scrollRef = useRef<ScrollView>(null);
+  const prevMsgCountRef = useRef(0);
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
+  // Auto-TTS: Neue Nika-Nachrichten vorlesen wenn aktiviert
+  useEffect(() => {
+    const nikaMsgs = messages.filter(m => m.role === 'nika');
+    if (nikaMsgs.length > prevMsgCountRef.current && nikaMsgs.length > 0 && !isLoading) {
+      prevMsgCountRef.current = nikaMsgs.length;
+      const last = nikaMsgs[nikaMsgs.length - 1];
+      if (last) speakIfAutoEnabled(last.text, 'de');
+    }
+  }, [messages, isLoading]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -135,6 +148,12 @@ export default function NikaChatScreen() {
                 </View>
                 <View style={styles.nikaBubble}>
                   <Text style={styles.nikaText}>{msg.text}</Text>
+                  <TouchableOpacity
+                    onPress={() => speak(msg.text, 'de')}
+                    style={styles.speakMsgBtn}
+                  >
+                    <Text style={styles.speakMsgIcon}>{isSpeaking ? '🔊' : '🔈'}</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             )}
@@ -389,4 +408,6 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { backgroundColor: DS.colors.glass2, ...DS.shadow.sm },
   sendBtnIcon: { color: '#FFFFFF', fontSize: 20, fontWeight: DS.font.bold },
+  speakMsgBtn: { alignSelf: 'flex-end', marginTop: 4, padding: 2 },
+  speakMsgIcon: { fontSize: 14, opacity: 0.7 },
 });

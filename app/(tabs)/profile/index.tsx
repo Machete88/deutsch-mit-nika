@@ -16,6 +16,21 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 const FONT_SIZE_LABELS: Record<string, string> = { small: 'Klein', normal: 'Normal', large: 'Groß' };
 
+// Light-Mode-sichere Farben
+function useContrastColors(isDark: boolean, colors: any) {
+  return {
+    textPrimary: isDark ? '#F8FAFC' : '#1E1033',
+    textSecondary: isDark ? '#C4B5FD' : '#4B3F72',
+    textMuted: isDark ? '#9B8AB8' : '#6B5B8A',
+    sectionBg: isDark ? colors.glass1 : 'rgba(124,58,237,0.06)',
+    sectionBorder: isDark ? colors.glassBorder : 'rgba(124,58,237,0.18)',
+    rowBorder: isDark ? colors.glassBorder : 'rgba(124,58,237,0.12)',
+    iconBg: isDark ? colors.glass2 : 'rgba(124,58,237,0.10)',
+    switchTrackOff: isDark ? colors.glass3 : '#D1D5DB',
+    switchThumbOff: '#9CA3AF',
+  };
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -23,7 +38,8 @@ export default function ProfileScreen() {
   const { stats } = useStatistics();
   const { achievements } = useAchievements();
   const { notifSettings, permissionStatus, requestPermissions, updateNotifSettings, sendTestNotification } = useNotifications();
-  const { colors, font, space, radius, isDark, fontSizeLevel, setFontSizeLevel, fs } = useNikaTheme();
+  const { colors, isDark, fontSizeLevel, setFontSizeLevel, fs } = useNikaTheme();
+  const c = useContrastColors(isDark, colors);
 
   const unlockedAchievements = achievements.filter((a: any) => a.isUnlocked);
 
@@ -48,19 +64,19 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bg1, paddingTop: insets.top }]}>
+    <View style={[styles.root, { backgroundColor: isDark ? colors.bg1 : '#F7F4FD', paddingTop: insets.top }]}>
       <View style={[styles.orb1, { backgroundColor: colors.orb1 }]} pointerEvents="none" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}>
 
         {/* ── Header ── */}
         <View style={styles.header}>
-          <View style={[styles.avatarCircle, { backgroundColor: colors.glass2, borderColor: colors.purple400 + '55' }]}>
+          <View style={[styles.avatarCircle, { backgroundColor: c.iconBg, borderColor: colors.purple400 + '55' }]}>
             <Text style={styles.avatarEmoji}>👤</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.userName, { color: colors.textPrimary }]}>{settings.userName || 'Lernender'}</Text>
-            <Text style={[styles.userLevel, { color: colors.purple400 }]}>{LEVEL_LABELS[settings.userLevel] ?? 'Anfänger (A1)'}</Text>
+            <Text style={[styles.userName, { color: c.textPrimary }]}>{settings.userName || 'Lernender'}</Text>
+            <Text style={[styles.userLevel, { color: colors.purple500 }]}>{LEVEL_LABELS[settings.userLevel] ?? 'Anfänger (A1)'}</Text>
           </View>
           <View style={[styles.streakBadge, { backgroundColor: 'rgba(251,146,60,0.15)', borderColor: 'rgba(251,146,60,0.30)' }]}>
             <Text style={styles.streakBadgeText}>🔥 {stats.currentStreak}</Text>
@@ -75,9 +91,9 @@ export default function ProfileScreen() {
             { label: 'Wiederholt', value: stats.totalWordsReviewed, color: colors.neonBlue },
             { label: 'Gespräche', value: stats.totalSpeakingSessions, color: colors.neonCyan },
           ].map(item => (
-            <View key={item.label} style={[styles.statCard, { backgroundColor: colors.glass1, borderColor: item.color + '33' }]}>
+            <View key={item.label} style={[styles.statCard, { backgroundColor: c.sectionBg, borderColor: item.color + '33' }]}>
               <Text style={[styles.statValue, { color: item.color }]}>{item.value}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{item.label}</Text>
+              <Text style={[styles.statLabel, { color: c.textMuted }]}>{item.label}</Text>
             </View>
           ))}
         </View>
@@ -85,22 +101,22 @@ export default function ProfileScreen() {
         {/* ── Charts Link ── */}
         <Pressable
           onPress={() => router.push('/stats' as never)}
-          style={({ pressed }) => [styles.chartsBtn, { backgroundColor: colors.glass1, borderColor: colors.glassBorder }, pressed && { opacity: 0.8 }]}
+          style={({ pressed }) => [styles.chartsBtn, { backgroundColor: c.sectionBg, borderColor: c.sectionBorder }, pressed && { opacity: 0.8 }]}
         >
           <Text style={styles.chartsBtnIcon}>📊</Text>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.chartsBtnTitle, { color: colors.textPrimary }]}>Fortschritts-Charts</Text>
-            <Text style={[styles.chartsBtnSub, { color: colors.textMuted }]}>Lernkurve & Aktivität</Text>
+            <Text style={[styles.chartsBtnTitle, { color: c.textPrimary }]}>Fortschritts-Charts</Text>
+            <Text style={[styles.chartsBtnSub, { color: c.textMuted }]}>Lernkurve & Aktivität</Text>
           </View>
-          <Text style={[styles.chartsBtnArrow, { color: colors.textMuted }]}>→</Text>
+          <Text style={[styles.chartsBtnArrow, { color: c.textMuted }]}>→</Text>
         </Pressable>
 
         {/* ── Achievements ── */}
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Erfolge</Text>
-        <View style={[styles.achievementsWrap, { backgroundColor: colors.glass1, borderColor: colors.glassBorder }]}>
+        <Text style={[styles.sectionTitle, { color: c.textMuted }]}>Erfolge</Text>
+        <View style={[styles.achievementsWrap, { backgroundColor: c.sectionBg, borderColor: c.sectionBorder }]}>
           <View style={styles.achieveHeader}>
-            <Text style={[styles.achieveCount, { color: colors.textMuted }]}>{unlockedAchievements.length}/{achievements.length} freigeschaltet</Text>
-            <View style={[styles.achieveProgressTrack, { backgroundColor: colors.glass2 }]}>
+            <Text style={[styles.achieveCount, { color: c.textMuted }]}>{unlockedAchievements.length}/{achievements.length} freigeschaltet</Text>
+            <View style={[styles.achieveProgressTrack, { backgroundColor: isDark ? colors.glass2 : 'rgba(124,58,237,0.12)' }]}>
               <View style={[styles.achieveProgressFill, {
                 width: `${achievements.length > 0 ? (unlockedAchievements.length / achievements.length) * 100 : 0}%` as any,
                 backgroundColor: colors.gold,
@@ -111,11 +127,11 @@ export default function ProfileScreen() {
             {achievements.slice(0, 6).map((a: any) => (
               <View key={a.id} style={[
                 styles.achieveCard,
-                { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
+                { backgroundColor: isDark ? colors.glass2 : 'rgba(124,58,237,0.08)', borderColor: c.sectionBorder },
                 a.isUnlocked && { borderColor: colors.gold + '55', backgroundColor: colors.gold + '0D' },
               ]}>
                 <Text style={[styles.achieveIcon, !a.isUnlocked && { opacity: 0.3 }]}>{a.icon}</Text>
-                <Text style={[styles.achieveName, { color: a.isUnlocked ? colors.textSecondary : colors.textDisabled }]} numberOfLines={2}>
+                <Text style={[styles.achieveName, { color: a.isUnlocked ? c.textSecondary : c.textMuted }]} numberOfLines={2}>
                   {a.title}
                 </Text>
                 {!a.isUnlocked && <Text style={styles.achieveLock}>🔒</Text>}
@@ -125,19 +141,19 @@ export default function ProfileScreen() {
         </View>
 
         {/* ── Settings ── */}
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Einstellungen</Text>
-        <View style={[styles.settingsWrap, { backgroundColor: colors.glass1, borderColor: colors.glassBorder }]}>
+        <Text style={[styles.sectionTitle, { color: c.textMuted }]}>Einstellungen</Text>
+        <View style={[styles.settingsWrap, { backgroundColor: c.sectionBg, borderColor: c.sectionBorder }]}>
 
           {/* ── Theme Toggle ── */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
             <ThemeToggleRow />
           </View>
 
           {/* Level */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
-            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🎓</Text></View>
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🎓</Text></View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Sprachniveau</Text>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Sprachniveau</Text>
               <View style={styles.levelBtns}>
                 {(['beginner', 'intermediate', 'advanced'] as const).map(lvl => (
                   <Pressable
@@ -145,11 +161,11 @@ export default function ProfileScreen() {
                     onPress={() => updateSettings({ userLevel: lvl })}
                     style={[
                       styles.levelBtn,
-                      { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
+                      { backgroundColor: isDark ? colors.glass2 : 'rgba(124,58,237,0.08)', borderColor: c.sectionBorder },
                       settings.userLevel === lvl && { backgroundColor: colors.purple600, borderColor: colors.purple500 },
                     ]}
                   >
-                    <Text style={[styles.levelBtnText, { color: settings.userLevel === lvl ? '#FFF' : colors.textMuted }]}>
+                    <Text style={[styles.levelBtnText, { color: settings.userLevel === lvl ? '#FFF' : c.textSecondary }]}>
                       {lvl === 'beginner' ? 'A1' : lvl === 'intermediate' ? 'A2–B1' : 'B1–B2'}
                     </Text>
                   </Pressable>
@@ -159,10 +175,10 @@ export default function ProfileScreen() {
           </View>
 
           {/* Font Size */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
-            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🔤</Text></View>
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🔤</Text></View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Schriftgröße</Text>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Schriftgröße</Text>
               <View style={styles.levelBtns}>
                 {(['small', 'normal', 'large'] as const).map(size => (
                   <Pressable
@@ -173,11 +189,11 @@ export default function ProfileScreen() {
                     }}
                     style={[
                       styles.levelBtn,
-                      { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
+                      { backgroundColor: isDark ? colors.glass2 : 'rgba(124,58,237,0.08)', borderColor: c.sectionBorder },
                       fontSizeLevel === size && { backgroundColor: colors.purple600, borderColor: colors.purple500 },
                     ]}
                   >
-                    <Text style={[styles.levelBtnText, { color: fontSizeLevel === size ? '#FFF' : colors.textMuted, fontSize: size === 'small' ? 11 : size === 'large' ? 15 : 13 }]}>
+                    <Text style={[styles.levelBtnText, { color: fontSizeLevel === size ? '#FFF' : c.textSecondary, fontSize: size === 'small' ? 11 : size === 'large' ? 15 : 13 }]}>
                       {FONT_SIZE_LABELS[size]}
                     </Text>
                   </Pressable>
@@ -187,36 +203,106 @@ export default function ProfileScreen() {
           </View>
 
           {/* Notifications */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
-            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🔔</Text></View>
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🔔</Text></View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Benachrichtigungen</Text>
-              <Text style={[styles.settingValue, { color: colors.textMuted }]}>{notifSettings.enabled ? 'Aktiviert' : 'Deaktiviert'}</Text>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Benachrichtigungen</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>{notifSettings.enabled ? 'Aktiviert' : 'Deaktiviert'}</Text>
             </View>
             <Switch
               value={notifSettings.enabled}
               onValueChange={handleToggleNotifications}
-              trackColor={{ false: colors.glass3, true: colors.purple600 }}
-              thumbColor={notifSettings.enabled ? colors.purple300 : colors.textMuted}
+              trackColor={{ false: c.switchTrackOff, true: colors.purple600 }}
+              thumbColor={notifSettings.enabled ? colors.purple300 : c.switchThumbOff}
               disabled={Platform.OS === 'web'}
             />
           </View>
 
           {/* Test Notification */}
           <Pressable onPress={handleTestNotification} style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}>
-            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🧪</Text></View>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🧪</Text></View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Test-Benachrichtigung</Text>
-              <Text style={[styles.settingValue, { color: colors.textMuted }]}>Jetzt senden</Text>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Test-Benachrichtigung</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>Jetzt senden</Text>
             </View>
-            <Text style={[styles.settingArrow, { color: colors.textMuted }]}>→</Text>
+            <Text style={[styles.settingArrow, { color: c.textMuted }]}>→</Text>
           </Pressable>
+        </View>
+
+        {/* ── Barrierefreiheit ── */}
+        <Text style={[styles.sectionTitle, { color: c.textMuted }]}>Barrierefreiheit</Text>
+        <View style={[styles.settingsWrap, { backgroundColor: c.sectionBg, borderColor: c.sectionBorder }]}>
+
+          {/* Auto-Vorlesen */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🔊</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Auto-Vorlesen</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>Nika liest Nachrichten automatisch vor</Text>
+            </View>
+            <Switch
+              value={settings.accessibilityAutoTTS ?? false}
+              onValueChange={val => updateSettings({ accessibilityAutoTTS: val })}
+              trackColor={{ false: c.switchTrackOff, true: colors.purple600 }}
+              thumbColor={(settings.accessibilityAutoTTS ?? false) ? colors.purple300 : c.switchThumbOff}
+            />
+          </View>
+
+          {/* Hoher Kontrast */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🎨</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Hoher Kontrast</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>Verstärkte Farben für bessere Lesbarkeit</Text>
+            </View>
+            <Switch
+              value={settings.accessibilityHighContrast ?? false}
+              onValueChange={val => updateSettings({ accessibilityHighContrast: val })}
+              trackColor={{ false: c.switchTrackOff, true: colors.purple600 }}
+              thumbColor={(settings.accessibilityHighContrast ?? false) ? colors.purple300 : c.switchThumbOff}
+            />
+          </View>
+
+          {/* Große Touch-Ziele */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>👆</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Große Schaltflächen</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>Größere Tipp-Ziele für einfachere Bedienung</Text>
+            </View>
+            <Switch
+              value={settings.accessibilityLargeTargets ?? false}
+              onValueChange={val => updateSettings({ accessibilityLargeTargets: val })}
+              trackColor={{ false: c.switchTrackOff, true: colors.purple600 }}
+              thumbColor={(settings.accessibilityLargeTargets ?? false) ? colors.purple300 : c.switchThumbOff}
+            />
+          </View>
+
+          {/* Barrierefreiheit-Modus (alle aktivieren) */}
+          <View style={[styles.settingRow]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>♿</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Barrierefreiheit-Modus</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>Alle Hilfsfunktionen auf einmal aktivieren</Text>
+            </View>
+            <Switch
+              value={settings.accessibilityMode ?? false}
+              onValueChange={val => updateSettings({
+                accessibilityMode: val,
+                accessibilityAutoTTS: val,
+                accessibilityHighContrast: val,
+                accessibilityLargeTargets: val,
+              })}
+              trackColor={{ false: c.switchTrackOff, true: colors.neonGreen }}
+              thumbColor={(settings.accessibilityMode ?? false) ? '#FFFFFF' : c.switchThumbOff}
+            />
+          </View>
         </View>
 
         {/* ── App Info ── */}
         <View style={styles.appInfo}>
-          <Text style={[styles.appInfoTitle, { color: colors.textMuted }]}>Deutsch mit Nika</Text>
-          <Text style={[styles.appInfoSub, { color: colors.textDisabled }]}>Version 2.0 · Powered by Nika AI</Text>
+          <Text style={[styles.appInfoTitle, { color: c.textMuted }]}>Deutsch mit Nika</Text>
+          <Text style={[styles.appInfoSub, { color: isDark ? colors.textDisabled : '#9CA3AF' }]}>Version 2.0 · Powered by Nika AI</Text>
         </View>
       </ScrollView>
     </View>

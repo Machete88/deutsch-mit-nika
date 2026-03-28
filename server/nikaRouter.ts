@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { publicProcedure, router } from "./_core/trpc";
 
-// ── Venice AI direkt ansprechen (primär) oder invokeLLM als Fallback ──────────
+// ── Venice AI Chat ─────────────────────────────────────────────────────────────
 async function callVeniceAI(messages: Array<{ role: string; content: string }>, maxTokens = 500): Promise<string> {
-  const apiKey = process.env.VENICE_API_KEY ?? process.env.BUILT_IN_FORGE_API_KEY ?? process.env.MANUS_API_KEY ?? '';
+  const apiKey = process.env.VENICE_API_KEY ?? process.env.BUILT_IN_FORGE_API_KEY ?? '';
 
-  // Venice AI API
-  if (apiKey.startsWith('VENICE_ADMIN_KEY_') || apiKey.startsWith('VENICE_')) {
+  if (apiKey) {
     const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -45,6 +44,36 @@ async function callVeniceAI(messages: Array<{ role: string; content: string }>, 
   return '';
 }
 
+// ── Venice TTS ─────────────────────────────────────────────────────────────────
+async function callVeniceTTS(text: string, language: 'de' | 'ru' = 'de'): Promise<Buffer | null> {
+  const apiKey = process.env.VENICE_API_KEY ?? process.env.BUILT_IN_FORGE_API_KEY ?? '';
+  if (!apiKey) return null;
+
+  // Venice TTS endpoint
+  const response = await fetch('https://api.venice.ai/api/v1/audio/speech', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'tts-kokoro',
+      input: text,
+      voice: language === 'ru' ? 'af_bella' : 'af_bella', // af_bella works well for both DE and RU
+      response_format: 'mp3',
+      speed: 1.0,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error('[TTS] Venice error:', response.status, await response.text());
+    return null;
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
 // ── System-Prompts ─────────────────────────────────────────────────────────────
 const NIKA_SYSTEM_BASE = `Du bist Nika, ein weibliches Chihuahua-Maskottchen und KI-Deutsch-Coach.
 Du bist warmherzig, frech (aber nie gemein), sehr schlau, motivierend und charmant.
@@ -69,7 +98,7 @@ Zuerst deine freundliche Reaktion, dann:
   if (mode === 'live') {
     return `${NIKA_SYSTEM_BASE}${levelHint}
 Modus: Live-Gespräch. Führe eine echte Unterhaltung auf Deutsch. Stelle Rückfragen. Halte den Dialog am Laufen.
-Korrigiere Fehler kurz am Ende deiner Antwort und mach weiter mit dem Gespräch.`;
+Antworte kurz und natürlich (max. 3 Sätze). Korrigiere Fehler kurz am Ende deiner Antwort.`;
   }
 
   if (mode === 'roleplay') {
@@ -92,6 +121,8 @@ Bleibe in deiner Rolle. Korrigiere Fehler am Ende jeder Antwort mit: [KORREKTUR]
 
 // ── Router ─────────────────────────────────────────────────────────────────────
 export const nikaRouter = router({
+
+  // ── Chat (Coach, Live, Roleplay) ──────────────────────────────────────────
   chat: publicProcedure
     .input(
       z.object({
@@ -143,6 +174,29 @@ export const nikaRouter = router({
       };
     }),
 
+  // ── TTS: Text-to-Speech für Nika-Stimme ──────────────────────────────────
+  speak: publicProcedure
+    .input(
+      z.object({
+        text: z.string().max(500),
+        language: z.enum(['de', 'ru']).default('de'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const audioBuffer = await callVeniceTTS(input.text, input.language);
+        if (!audioBuffer) {
+          return { success: false, audioBase64: null };
+        }
+        const base64 = audioBuffer.toString('base64');
+        return { success: true, audioBase64: base64 };
+      } catch (err) {
+        console.error('[TTS] Error:', err);
+        return { success: false, audioBase64: null };
+      }
+    }),
+
+  // ── Panic Help ────────────────────────────────────────────────────────────
   panicHelp: publicProcedure
     .input(
       z.object({
@@ -182,6 +236,7 @@ Format:
       };
     }),
 
+  // ── Greeting ──────────────────────────────────────────────────────────────
   greeting: publicProcedure
     .input(
       z.object({
@@ -214,7 +269,7 @@ Format:
       return { greeting: text };
     }),
 
-  // Grammatik-Erklärung via KI
+  // ── Grammatik-Erklärung ───────────────────────────────────────────────────
   explainGrammar: publicProcedure
     .input(
       z.object({
