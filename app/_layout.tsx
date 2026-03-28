@@ -7,7 +7,18 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
+import { SettingsProvider } from '@/lib/settings-context';
+import { VocabularyProvider } from '@/lib/vocabulary-context';
+import { SpacedRepetitionProvider } from '@/lib/spaced-repetition-context';
+import { StatisticsProvider } from '@/lib/statistics-context';
+import { AchievementsProvider } from '@/lib/achievements-context';
+import { ExamProvider } from '@/lib/exam-context';
+import { TTSProvider } from '@/lib/tts-context';
+import { NotificationsProvider } from '@/lib/notifications-context';
+import { AccessibilityProvider } from '@/lib/accessibility-context';
+import { OnboardingGuard } from '@/components/onboarding-guard';
 import { ThemeProvider } from "@/lib/theme-provider";
+import { NikaThemeProvider } from '@/lib/nika-theme-context';
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -85,11 +96,38 @@ export default function RootLayout() {
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="oauth/callback" />
-          </Stack>
-          <StatusBar style="auto" />
+          <SettingsProvider>
+            <StatisticsProvider>
+              <AchievementsProvider>
+                <VocabularyProvider>
+                  <SpacedRepetitionProvider>
+                    <ExamProvider>
+                      <TTSProvider>
+                        <NotificationsProvider>
+                        <AccessibilityProvider>
+                        <OnboardingGuard>
+                          <Stack screenOptions={{ headerShown: false }}>
+                            <Stack.Screen name="(tabs)" />
+                            <Stack.Screen name="oauth/callback" />
+                            <Stack.Screen name="onboarding" />
+                            <Stack.Screen name="accessibility" />
+                            <Stack.Screen name="audio" />
+                            <Stack.Screen name="dictation" />
+                            <Stack.Screen name="export" />
+                            <Stack.Screen name="dailyplan" />
+                            <Stack.Screen name="stats" />
+                          </Stack>
+                        </OnboardingGuard>
+                        </AccessibilityProvider>
+                        </NotificationsProvider>
+                      </TTSProvider>
+                    </ExamProvider>
+                  </SpacedRepetitionProvider>
+                </VocabularyProvider>
+              </AchievementsProvider>
+            </StatisticsProvider>
+          </SettingsProvider>
+            <StatusBar style="auto" />
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
@@ -99,21 +137,25 @@ export default function RootLayout() {
 
   if (shouldOverrideSafeArea) {
     return (
-      <ThemeProvider>
-        <SafeAreaProvider initialMetrics={providerInitialMetrics}>
-          <SafeAreaFrameContext.Provider value={frame}>
-            <SafeAreaInsetsContext.Provider value={insets}>
-              {content}
-            </SafeAreaInsetsContext.Provider>
-          </SafeAreaFrameContext.Provider>
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <NikaThemeProvider>
+        <ThemeProvider>
+          <SafeAreaProvider initialMetrics={providerInitialMetrics}>
+            <SafeAreaFrameContext.Provider value={frame}>
+              <SafeAreaInsetsContext.Provider value={insets}>
+                {content}
+              </SafeAreaInsetsContext.Provider>
+            </SafeAreaFrameContext.Provider>
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </NikaThemeProvider>
     );
   }
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
-    </ThemeProvider>
+    <NikaThemeProvider>
+      <ThemeProvider>
+        <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
+      </ThemeProvider>
+    </NikaThemeProvider>
   );
 }
