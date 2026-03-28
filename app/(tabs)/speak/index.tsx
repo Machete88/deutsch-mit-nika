@@ -1,128 +1,141 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenContainer } from '@/components/screen-container';
-import { useSettings } from '@/lib/settings-context';
-import { useFontSizes } from '@/hooks/use-accessibility';
-import { useColors } from '@/hooks/use-colors';
-import { conversationScenarios } from '@/lib/conversation-coach';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStatistics } from '@/lib/statistics-context';
+import { conversationScenarios } from '@/lib/conversation-coach';
+import { DS } from '@/constants/design';
+
+const SPEAK_MODES = [
+  {
+    id: 'practice', title: 'Aussprache', emoji: '🔊',
+    description: 'Wörter hören & nachsprechen', route: '/speak/practice',
+    accent: DS.colors.neonCyan, bg: 'rgba(34,211,238,0.10)', border: 'rgba(34,211,238,0.25)',
+  },
+  {
+    id: 'conversation', title: 'Gespräch', emoji: '💬',
+    description: 'Dialoge auf Deutsch', route: '/speak/conversation',
+    accent: DS.colors.neonPurple, bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.28)',
+  },
+];
+
+const LEVEL_COLORS: Record<string, string> = {
+  A1: DS.colors.neonGreen, A2: DS.colors.neonBlue, B1: DS.colors.gold,
+};
 
 export default function SpeakScreen() {
   const router = useRouter();
-  const { settings } = useSettings();
-  const fontSizes = useFontSizes(settings.fontSizeLevel);
-  const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { stats } = useStatistics();
 
-  const SPEAK_MODES = [
-    { id: 'practice', title: 'Произношение', emoji: '🔊', description: 'Слушай и повторяй слова', route: '/speak/practice' },
-    { id: 'conversation', title: 'Разговор', emoji: '💬', description: 'Диалоги на немецком', route: '/speak/conversation' },
-  ];
-
-  const levelColors: Record<string, string> = {
-    A1: '#22C55E', A2: '#3B82F6', B1: '#F59E0B',
-  };
-
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-          <Text style={{ fontSize: fontSizes['2xl'], fontWeight: '800', color: colors.foreground }}>
-            Говорить
-          </Text>
-          <Text style={{ fontSize: fontSizes.sm, color: colors.muted, marginTop: 4 }}>
-            Практика произношения и разговора
-          </Text>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <View style={styles.orb1} pointerEvents="none" />
+      <View style={styles.orb2} pointerEvents="none" />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Sprechen</Text>
+          <Text style={styles.headerSub}>Aussprache & Konversation</Text>
         </View>
 
-        {/* Stats */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', justifyContent: 'space-around' }}>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: fontSizes['2xl'], fontWeight: '800', color: colors.primary }}>
-                {stats.totalSpeakingSessions}
-              </Text>
-              <Text style={{ fontSize: fontSizes.xs, color: colors.muted }}>Сессий</Text>
+        <View style={styles.statsRow}>
+          {[
+            { label: 'Sitzungen', value: stats.totalSpeakingSessions, icon: '🎙️', color: DS.colors.neonCyan },
+            { label: 'Szenarien', value: conversationScenarios.length, icon: '💬', color: DS.colors.neonPurple },
+            { label: 'Streak', value: `${stats.currentStreak}🔥`, icon: '🔥', color: '#FB923C' },
+          ].map(item => (
+            <View key={item.label} style={[styles.statCard, { borderColor: item.color + '33' }]}>
+              <Text style={styles.statIcon}>{item.icon}</Text>
+              <Text style={[styles.statValue, { color: item.color }]}>{item.value}</Text>
+              <Text style={styles.statLabel}>{item.label}</Text>
             </View>
-            <View style={{ width: 1, backgroundColor: colors.border }} />
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: fontSizes['2xl'], fontWeight: '800', color: colors.primary }}>
-                {conversationScenarios.length}
-              </Text>
-              <Text style={{ fontSize: fontSizes.xs, color: colors.muted }}>Сценариев</Text>
-            </View>
-          </View>
+          ))}
         </View>
 
-        {/* Modes */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
-          <Text style={{ fontSize: fontSizes.lg, fontWeight: '700', color: colors.foreground, marginBottom: 12 }}>
-            Режимы
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            {SPEAK_MODES.map(mode => (
-              <Pressable
-                key={mode.id}
-                onPress={() => router.push(mode.route as never)}
-                style={({ pressed }) => ({
-                  flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 16,
-                  borderWidth: 1, borderColor: colors.border,
-                  opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
-                })}
-              >
-                <Text style={{ fontSize: 32 }}>{mode.emoji}</Text>
-                <Text style={{ fontSize: fontSizes.base, fontWeight: '700', color: colors.foreground, marginTop: 10 }}>
-                  {mode.title}
-                </Text>
-                <Text style={{ fontSize: fontSizes.xs, color: colors.muted, marginTop: 4 }}>
-                  {mode.description}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Scenarios */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ fontSize: fontSizes.lg, fontWeight: '700', color: colors.foreground, marginBottom: 12 }}>
-            Сценарии разговора
-          </Text>
-          {conversationScenarios.map(scenario => (
+        <Text style={styles.sectionTitle}>Übungsmodi</Text>
+        <View style={styles.modesRow}>
+          {SPEAK_MODES.map(mode => (
             <Pressable
-              key={scenario.id}
-              onPress={() => router.push({
-                pathname: '/speak/conversation' as never,
-                params: { scenarioId: scenario.id },
-              } as never)}
-              style={({ pressed }) => ({
-                backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 10,
-                borderWidth: 1, borderColor: colors.border,
-                opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.98 : 1 }],
-              })}
+              key={mode.id}
+              onPress={() => router.push(mode.route as never)}
+              style={({ pressed }) => [
+                styles.modeCard,
+                { backgroundColor: mode.bg, borderColor: mode.border },
+                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+              ]}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fontSizes.base, fontWeight: '700', color: colors.foreground }}>
-                    {scenario.title}
-                  </Text>
-                  <Text style={{ fontSize: fontSizes.xs, color: colors.muted, marginTop: 4, lineHeight: fontSizes.xs * 1.5 }}>
-                    {scenario.setting}
-                  </Text>
-                </View>
-                <View style={{
-                  backgroundColor: levelColors[scenario.level] + '20',
-                  borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, marginLeft: 8,
-                }}>
-                  <Text style={{ fontSize: fontSizes.xs, fontWeight: '700', color: levelColors[scenario.level] }}>
-                    {scenario.level}
-                  </Text>
-                </View>
+              <View style={[styles.modeIconWrap, { backgroundColor: mode.accent + '22' }]}>
+                <Text style={styles.modeIcon}>{mode.emoji}</Text>
+              </View>
+              <Text style={[styles.modeTitle, { color: mode.accent }]}>{mode.title}</Text>
+              <Text style={styles.modeDesc}>{mode.description}</Text>
+              <View style={[styles.modeBar, { backgroundColor: mode.accent }]} />
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Szenarien</Text>
+        <View style={styles.scenariosWrap}>
+          {conversationScenarios.map((s: any, i: number) => (
+            <Pressable
+              key={s.id}
+              onPress={() => router.push({ pathname: '/speak/conversation' as never, params: { scenarioId: s.id } } as never)}
+              style={({ pressed }) => [
+                styles.scenarioRow,
+                i < conversationScenarios.length - 1 && styles.scenarioBorder,
+                pressed && { backgroundColor: 'rgba(168,85,247,0.06)' },
+              ]}
+            >
+              <View style={styles.scenarioIconWrap}>
+                <Text style={styles.scenarioIcon}>{s.emoji ?? '💬'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.scenarioTitle}>{s.title}</Text>
+                <Text style={styles.scenarioDesc} numberOfLines={1}>{s.setting}</Text>
+              </View>
+              <View style={[styles.levelBadge, { backgroundColor: (LEVEL_COLORS[s.level] ?? DS.colors.neonBlue) + '22', borderColor: (LEVEL_COLORS[s.level] ?? DS.colors.neonBlue) + '55' }]}>
+                <Text style={[styles.levelBadgeText, { color: LEVEL_COLORS[s.level] ?? DS.colors.neonBlue }]}>{s.level}</Text>
               </View>
             </Pressable>
           ))}
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.bg1 },
+  orb1: { position: 'absolute', top: -80, right: -60, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(34,211,238,0.07)' },
+  orb2: { position: 'absolute', bottom: 250, left: -80, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(168,85,247,0.07)' },
+  scroll: { paddingHorizontal: DS.space[4] },
+  header: { paddingTop: DS.space[4], paddingBottom: DS.space[4] },
+  headerTitle: { fontSize: DS.font['2xl'], fontWeight: DS.font.extrabold, color: DS.colors.textPrimary, letterSpacing: -0.5 },
+  headerSub: { fontSize: DS.font.sm, color: DS.colors.textMuted, marginTop: 3 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: DS.space[5] },
+  statCard: { flex: 1, backgroundColor: DS.colors.glass1, borderRadius: DS.radius.lg, borderWidth: 1, paddingVertical: DS.space[3], alignItems: 'center', gap: 3 },
+  statIcon: { fontSize: 18 },
+  statValue: { fontSize: DS.font.md, fontWeight: DS.font.extrabold },
+  statLabel: { fontSize: DS.font.xs, color: DS.colors.textMuted, textAlign: 'center' },
+  sectionTitle: { fontSize: DS.font.xs, fontWeight: DS.font.bold, color: DS.colors.textMuted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: DS.space[3] },
+  modesRow: { flexDirection: 'row', gap: 12, marginBottom: DS.space[5] },
+  modeCard: { flex: 1, borderRadius: DS.radius.xl, borderWidth: 1, padding: DS.space[4], minHeight: 110, position: 'relative', overflow: 'hidden' },
+  modeIconWrap: { width: 44, height: 44, borderRadius: DS.radius.md, alignItems: 'center', justifyContent: 'center', marginBottom: DS.space[2] },
+  modeIcon: { fontSize: 22 },
+  modeTitle: { fontSize: DS.font.sm, fontWeight: DS.font.bold, marginBottom: 3 },
+  modeDesc: { fontSize: DS.font.xs, color: DS.colors.textMuted },
+  modeBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, opacity: 0.5 },
+  scenariosWrap: { backgroundColor: DS.colors.glass1, borderRadius: DS.radius.xl, borderWidth: 1, borderColor: DS.colors.glassBorder, marginBottom: DS.space[5], overflow: 'hidden' },
+  scenarioRow: { flexDirection: 'row', alignItems: 'center', padding: DS.space[4], gap: DS.space[3] },
+  scenarioBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  scenarioIconWrap: { width: 40, height: 40, borderRadius: DS.radius.md, backgroundColor: 'rgba(168,85,247,0.12)', alignItems: 'center', justifyContent: 'center' },
+  scenarioIcon: { fontSize: 20 },
+  scenarioTitle: { fontSize: DS.font.sm, color: DS.colors.textPrimary, fontWeight: DS.font.semibold },
+  scenarioDesc: { fontSize: DS.font.xs, color: DS.colors.textMuted, marginTop: 2 },
+  levelBadge: { borderRadius: DS.radius.full, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1 },
+  levelBadgeText: { fontSize: DS.font.xs, fontWeight: DS.font.bold },
+});

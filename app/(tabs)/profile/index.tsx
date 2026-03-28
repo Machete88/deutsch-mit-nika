@@ -1,48 +1,37 @@
-import { View, Text, ScrollView, Pressable, Switch, Platform, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, Pressable, Switch, StyleSheet, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenContainer } from '@/components/screen-container';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettings } from '@/lib/settings-context';
 import { useStatistics } from '@/lib/statistics-context';
 import { useAchievements } from '@/lib/achievements-context';
 import { useNotifications } from '@/lib/notifications-context';
-import { useFontSizes } from '@/hooks/use-accessibility';
-import { useColors } from '@/hooks/use-colors';
-import { useThemeContext } from '@/lib/theme-provider';
+import { useNikaTheme } from '@/lib/nika-theme-context';
+import { ThemeToggleRow } from '@/components/ui/theme-toggle';
+
+const LEVEL_LABELS: Record<string, string> = {
+  beginner: 'Anfänger (A1)',
+  intermediate: 'Mittel (A2–B1)',
+  advanced: 'Fortgeschritten (B1–B2)',
+};
+const FONT_SIZE_LABELS: Record<string, string> = { small: 'Klein', normal: 'Normal', large: 'Groß' };
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { settings, updateSettings } = useSettings();
   const { stats } = useStatistics();
   const { achievements } = useAchievements();
   const { notifSettings, permissionStatus, requestPermissions, updateNotifSettings, sendTestNotification } = useNotifications();
-  const fontSizes = useFontSizes(settings.fontSizeLevel);
-  const colors = useColors();
-  const { setColorScheme } = useThemeContext();
+  const { colors, font, space, radius, isDark } = useNikaTheme();
 
-  const unlockedAchievements = achievements.filter(a => a.isUnlocked);
-  const lockedAchievements = achievements.filter(a => !a.isUnlocked);
-
-  const levelLabels: Record<string, string> = {
-    beginner: 'Начинающий (A1)',
-    intermediate: 'Средний (A2–B1)',
-    advanced: 'Продвинутый (B1–B2)',
-  };
-
-  const fontSizeLabels: Record<string, string> = {
-    small: 'Маленький',
-    normal: 'Обычный',
-    large: 'Большой',
-  };
+  const unlockedAchievements = achievements.filter((a: any) => a.isUnlocked);
 
   const handleToggleNotifications = async (val: boolean) => {
     if (val && permissionStatus !== 'granted') {
       const granted = await requestPermissions();
       if (!granted) {
-        Alert.alert(
-          'Нет разрешения',
-          'Разреши уведомления в настройках устройства, чтобы получать напоминания.',
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Keine Berechtigung', 'Erlaube Benachrichtigungen in den Geräteeinstellungen.', [{ text: 'OK' }]);
         return;
       }
     }
@@ -51,258 +40,228 @@ export default function ProfileScreen() {
 
   const handleTestNotification = async () => {
     if (Platform.OS === 'web') {
-      Alert.alert('Недоступно', 'Push-уведомления не поддерживаются в веб-версии.');
+      Alert.alert('Nicht verfügbar', 'Push-Benachrichtigungen werden in der Web-Version nicht unterstützt.');
       return;
     }
     await sendTestNotification();
-    Alert.alert('Отправлено!', 'Тестовое уведомление придёт через 2 секунды.');
+    Alert.alert('Gesendet!', 'Test-Benachrichtigung kommt in 2 Sekunden.');
   };
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-          <Text style={{ fontSize: fontSizes['2xl'], fontWeight: '800', color: colors.foreground }}>
-            Профиль
-          </Text>
+    <View style={[styles.root, { backgroundColor: colors.bg1, paddingTop: insets.top }]}>
+      <View style={[styles.orb1, { backgroundColor: colors.orb1 }]} pointerEvents="none" />
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}>
+
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <View style={[styles.avatarCircle, { backgroundColor: colors.glass2, borderColor: colors.purple400 + '55' }]}>
+            <Text style={styles.avatarEmoji}>👤</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.userName, { color: colors.textPrimary }]}>{settings.userName || 'Lernender'}</Text>
+            <Text style={[styles.userLevel, { color: colors.purple400 }]}>{LEVEL_LABELS[settings.userLevel] ?? 'Anfänger (A1)'}</Text>
+          </View>
+          <View style={[styles.streakBadge, { backgroundColor: 'rgba(251,146,60,0.15)', borderColor: 'rgba(251,146,60,0.30)' }]}>
+            <Text style={styles.streakBadgeText}>🔥 {stats.currentStreak}</Text>
+          </View>
         </View>
 
-        {/* Stats Card */}
-        <View style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: colors.primary, borderRadius: 20, padding: 20 }}>
-          <Text style={{ fontSize: fontSizes.lg, fontWeight: '700', color: '#fff', marginBottom: 16 }}>
-            Моя статистика
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {[
-              { label: 'Серия дней', value: `🔥 ${stats.currentStreak}` },
-              { label: 'Слов выучено', value: `📚 ${stats.totalWordsLearned}` },
-              { label: 'Повторено', value: `🔄 ${stats.totalWordsReviewed}` },
-              { label: 'Разговоров', value: `💬 ${stats.totalSpeakingSessions}` },
-            ].map(item => (
-              <View key={item.label} style={{ width: '47%', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 12 }}>
-                <Text style={{ fontSize: fontSizes.xl, fontWeight: '800', color: '#fff' }}>{item.value}</Text>
-                <Text style={{ fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>{item.label}</Text>
+        {/* ── Stats ── */}
+        <View style={styles.statsGrid}>
+          {[
+            { label: 'Streak', value: `${stats.currentStreak}🔥`, color: '#FB923C' },
+            { label: 'Gelernt', value: stats.totalWordsLearned, color: colors.neonGreen },
+            { label: 'Wiederholt', value: stats.totalWordsReviewed, color: colors.neonBlue },
+            { label: 'Gespräche', value: stats.totalSpeakingSessions, color: colors.neonCyan },
+          ].map(item => (
+            <View key={item.label} style={[styles.statCard, { backgroundColor: colors.glass1, borderColor: item.color + '33' }]}>
+              <Text style={[styles.statValue, { color: item.color }]}>{item.value}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Charts Link ── */}
+        <Pressable
+          onPress={() => router.push('/stats' as never)}
+          style={({ pressed }) => [styles.chartsBtn, { backgroundColor: colors.glass1, borderColor: colors.glassBorder }, pressed && { opacity: 0.8 }]}
+        >
+          <Text style={styles.chartsBtnIcon}>📊</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.chartsBtnTitle, { color: colors.textPrimary }]}>Fortschritts-Charts</Text>
+            <Text style={[styles.chartsBtnSub, { color: colors.textMuted }]}>Lernkurve & Aktivität</Text>
+          </View>
+          <Text style={[styles.chartsBtnArrow, { color: colors.textMuted }]}>→</Text>
+        </Pressable>
+
+        {/* ── Achievements ── */}
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Erfolge</Text>
+        <View style={[styles.achievementsWrap, { backgroundColor: colors.glass1, borderColor: colors.glassBorder }]}>
+          <View style={styles.achieveHeader}>
+            <Text style={[styles.achieveCount, { color: colors.textMuted }]}>{unlockedAchievements.length}/{achievements.length} freigeschaltet</Text>
+            <View style={[styles.achieveProgressTrack, { backgroundColor: colors.glass2 }]}>
+              <View style={[styles.achieveProgressFill, {
+                width: `${achievements.length > 0 ? (unlockedAchievements.length / achievements.length) * 100 : 0}%` as any,
+                backgroundColor: colors.gold,
+              }]} />
+            </View>
+          </View>
+          <View style={styles.achieveGrid}>
+            {achievements.slice(0, 6).map((a: any) => (
+              <View key={a.id} style={[
+                styles.achieveCard,
+                { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
+                a.isUnlocked && { borderColor: colors.gold + '55', backgroundColor: colors.gold + '0D' },
+              ]}>
+                <Text style={[styles.achieveIcon, !a.isUnlocked && { opacity: 0.3 }]}>{a.icon}</Text>
+                <Text style={[styles.achieveName, { color: a.isUnlocked ? colors.textSecondary : colors.textDisabled }]} numberOfLines={2}>
+                  {a.title}
+                </Text>
+                {!a.isUnlocked && <Text style={styles.achieveLock}>🔒</Text>}
               </View>
             ))}
           </View>
         </View>
 
-        {/* Charts Button */}
-        <Pressable
-          onPress={() => router.push('/stats' as never)}
-          style={({ pressed }) => ({
-            marginHorizontal: 20, marginBottom: 16,
-            backgroundColor: colors.surface, borderRadius: 16, padding: 16,
-            borderWidth: 1, borderColor: colors.border,
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={{ fontSize: 24 }}>📊</Text>
-            <View>
-              <Text style={{ fontSize: fontSizes.base, fontWeight: '700', color: colors.foreground }}>
-                Графики прогресса
-              </Text>
-              <Text style={{ fontSize: fontSizes.xs, color: colors.muted, marginTop: 2 }}>
-                Кривая обучения и активность
-              </Text>
-            </View>
+        {/* ── Settings ── */}
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Einstellungen</Text>
+        <View style={[styles.settingsWrap, { backgroundColor: colors.glass1, borderColor: colors.glassBorder }]}>
+
+          {/* ── Theme Toggle ── */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
+            <ThemeToggleRow />
           </View>
-          <Text style={{ fontSize: 18, color: colors.muted }}>›</Text>
-        </Pressable>
-
-        {/* Achievements */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
-          <Text style={{ fontSize: fontSizes.lg, fontWeight: '700', color: colors.foreground, marginBottom: 12 }}>
-            Достижения ({unlockedAchievements.length}/{achievements.length})
-          </Text>
-          {unlockedAchievements.map(a => (
-            <View key={a.id} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              backgroundColor: '#FEF3C7', borderRadius: 14, padding: 14, marginBottom: 8,
-              borderWidth: 1, borderColor: '#F59E0B',
-            }}>
-              <Text style={{ fontSize: 28 }}>{a.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: fontSizes.base, fontWeight: '700', color: '#92400E' }}>{a.title}</Text>
-                <Text style={{ fontSize: fontSizes.xs, color: '#B45309', marginTop: 2 }}>{a.description}</Text>
-              </View>
-              <Text style={{ fontSize: 16 }}>🏅</Text>
-            </View>
-          ))}
-          {lockedAchievements.slice(0, 3).map(a => (
-            <View key={a.id} style={{
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-              backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 8,
-              borderWidth: 1, borderColor: colors.border, opacity: 0.6,
-            }}>
-              <Text style={{ fontSize: 28, opacity: 0.4 }}>{a.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: fontSizes.base, fontWeight: '700', color: colors.foreground }}>{a.title}</Text>
-                <Text style={{ fontSize: fontSizes.xs, color: colors.muted, marginTop: 2 }}>{a.description}</Text>
-              </View>
-              <Text style={{ fontSize: 16 }}>🔒</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Settings */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ fontSize: fontSizes.lg, fontWeight: '700', color: colors.foreground, marginBottom: 12 }}>
-            Настройки
-          </Text>
 
           {/* Level */}
-          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: fontSizes.sm, fontWeight: '600', color: colors.muted, marginBottom: 8 }}>
-              Уровень немецкого
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {(['beginner', 'intermediate', 'advanced'] as const).map(level => (
-                <Pressable
-                  key={level}
-                  onPress={() => updateSettings({ userLevel: level })}
-                  style={({ pressed }) => ({
-                    flex: 1, backgroundColor: settings.userLevel === level ? colors.primary : colors.background,
-                    borderRadius: 10, padding: 8, alignItems: 'center',
-                    borderWidth: 1, borderColor: settings.userLevel === level ? colors.primary : colors.border,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Text style={{ fontSize: fontSizes.xs, fontWeight: '700', color: settings.userLevel === level ? '#fff' : colors.foreground }}>
-                    {level === 'beginner' ? 'A1' : level === 'intermediate' ? 'A2-B1' : 'B1-B2'}
-                  </Text>
-                </Pressable>
-              ))}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🎓</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Sprachniveau</Text>
+              <View style={styles.levelBtns}>
+                {(['beginner', 'intermediate', 'advanced'] as const).map(lvl => (
+                  <Pressable
+                    key={lvl}
+                    onPress={() => updateSettings({ userLevel: lvl })}
+                    style={[
+                      styles.levelBtn,
+                      { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
+                      settings.userLevel === lvl && { backgroundColor: colors.purple600, borderColor: colors.purple500 },
+                    ]}
+                  >
+                    <Text style={[styles.levelBtnText, { color: settings.userLevel === lvl ? '#FFF' : colors.textMuted }]}>
+                      {lvl === 'beginner' ? 'A1' : lvl === 'intermediate' ? 'A2–B1' : 'B1–B2'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </View>
 
           {/* Font Size */}
-          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: fontSizes.sm, fontWeight: '600', color: colors.muted, marginBottom: 8 }}>
-              Размер шрифта
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {(['small', 'normal', 'large'] as const).map(size => (
-                <Pressable
-                  key={size}
-                  onPress={() => updateSettings({ fontSizeLevel: size })}
-                  style={({ pressed }) => ({
-                    flex: 1, backgroundColor: settings.fontSizeLevel === size ? colors.primary : colors.background,
-                    borderRadius: 10, padding: 8, alignItems: 'center',
-                    borderWidth: 1, borderColor: settings.fontSizeLevel === size ? colors.primary : colors.border,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Text style={{ fontSize: fontSizes.xs, fontWeight: '700', color: settings.fontSizeLevel === size ? '#fff' : colors.foreground }}>
-                    {fontSizeLabels[size]}
-                  </Text>
-                </Pressable>
-              ))}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🔤</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Schriftgröße</Text>
+              <View style={styles.levelBtns}>
+                {(['small', 'normal', 'large'] as const).map(size => (
+                  <Pressable
+                    key={size}
+                    onPress={() => updateSettings({ fontSizeLevel: size })}
+                    style={[
+                      styles.levelBtn,
+                      { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
+                      settings.fontSizeLevel === size && { backgroundColor: colors.purple600, borderColor: colors.purple500 },
+                    ]}
+                  >
+                    <Text style={[styles.levelBtnText, { color: settings.fontSizeLevel === size ? '#FFF' : colors.textMuted }]}>
+                      {FONT_SIZE_LABELS[size]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </View>
 
-          {/* Dark Mode */}
-          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: fontSizes.base, fontWeight: '600', color: colors.foreground }}>
-              🌙 Тёмная тема
-            </Text>
+          {/* Notifications */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: colors.glassBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🔔</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Benachrichtigungen</Text>
+              <Text style={[styles.settingValue, { color: colors.textMuted }]}>{notifSettings.enabled ? 'Aktiviert' : 'Deaktiviert'}</Text>
+            </View>
             <Switch
-              value={settings.isDarkMode}
-              onValueChange={val => { updateSettings({ isDarkMode: val }); setColorScheme(val ? 'dark' : 'light'); }}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#fff"
+              value={notifSettings.enabled}
+              onValueChange={handleToggleNotifications}
+              trackColor={{ false: colors.glass3, true: colors.purple600 }}
+              thumbColor={notifSettings.enabled ? colors.purple300 : colors.textMuted}
+              disabled={Platform.OS === 'web'}
             />
           </View>
 
-          {/* Push Notifications Section */}
-          <Text style={{ fontSize: fontSizes.lg, fontWeight: '700', color: colors.foreground, marginTop: 8, marginBottom: 12 }}>
-            Уведомления
-          </Text>
-
-          {/* Enable Notifications Toggle */}
-          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.border }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: notifSettings.enabled ? 12 : 0 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: fontSizes.base, fontWeight: '600', color: colors.foreground }}>
-                  🔔 Напоминания
-                </Text>
-                <Text style={{ fontSize: fontSizes.xs, color: colors.muted, marginTop: 2 }}>
-                  {Platform.OS === 'web' ? 'Недоступно в веб-версии' : 'Ежедневные напоминания учиться'}
-                </Text>
-              </View>
-              <Switch
-                value={notifSettings.enabled}
-                onValueChange={handleToggleNotifications}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#fff"
-                disabled={Platform.OS === 'web'}
-              />
+          {/* Test Notification */}
+          <Pressable onPress={handleTestNotification} style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: colors.glass2 }]}><Text style={styles.settingIcon}>🧪</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>Test-Benachrichtigung</Text>
+              <Text style={[styles.settingValue, { color: colors.textMuted }]}>Jetzt senden</Text>
             </View>
+            <Text style={[styles.settingArrow, { color: colors.textMuted }]}>→</Text>
+          </Pressable>
+        </View>
 
-            {notifSettings.enabled && (
-              <>
-                {/* Time Picker */}
-                <View style={{ marginTop: 4 }}>
-                  <Text style={{ fontSize: fontSizes.sm, fontWeight: '600', color: colors.muted, marginBottom: 8 }}>
-                    Время напоминания
-                  </Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      {[7, 8, 9, 10, 12, 14, 18, 19, 20, 21].map(h => (
-                        <Pressable
-                          key={h}
-                          onPress={() => updateNotifSettings({ reminderHour: h, reminderMinute: 0 })}
-                          style={({ pressed }) => ({
-                            backgroundColor: notifSettings.reminderHour === h ? colors.primary : colors.background,
-                            borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
-                            borderWidth: 1, borderColor: notifSettings.reminderHour === h ? colors.primary : colors.border,
-                            opacity: pressed ? 0.7 : 1,
-                          })}
-                        >
-                          <Text style={{ fontSize: fontSizes.sm, fontWeight: '700', color: notifSettings.reminderHour === h ? '#fff' : colors.foreground }}>
-                            {h}:00
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-
-                {/* Streak Reminder */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-                  <Text style={{ fontSize: fontSizes.sm, fontWeight: '600', color: colors.foreground }}>
-                    🔥 Напоминание о серии (20:00)
-                  </Text>
-                  <Switch
-                    value={notifSettings.streakReminder}
-                    onValueChange={val => updateNotifSettings({ streakReminder: val })}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor="#fff"
-                  />
-                </View>
-
-                {/* Test Button */}
-                <Pressable
-                  onPress={handleTestNotification}
-                  style={({ pressed }) => ({
-                    marginTop: 12, backgroundColor: colors.primary, borderRadius: 12,
-                    padding: 12, alignItems: 'center', opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Text style={{ fontSize: fontSizes.sm, fontWeight: '700', color: '#fff' }}>
-                    Тест-уведомление
-                  </Text>
-                </Pressable>
-              </>
-            )}
-          </View>
+        {/* ── App Info ── */}
+        <View style={styles.appInfo}>
+          <Text style={[styles.appInfoTitle, { color: colors.textMuted }]}>Deutsch mit Nika</Text>
+          <Text style={[styles.appInfoSub, { color: colors.textDisabled }]}>Version 2.0 · Powered by Nika AI</Text>
         </View>
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  orb1: { position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: 110 },
+  scroll: { paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 16, paddingBottom: 16 },
+  avatarCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  avatarEmoji: { fontSize: 28 },
+  userName: { fontSize: 20, fontWeight: '800' },
+  userLevel: { fontSize: 11, marginTop: 3 },
+  streakBadge: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1 },
+  streakBadgeText: { color: '#FB923C', fontSize: 13, fontWeight: '700' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  statCard: { width: '47.5%', borderRadius: 16, borderWidth: 1, paddingVertical: 12, alignItems: 'center', gap: 3 },
+  statValue: { fontSize: 20, fontWeight: '800' },
+  statLabel: { fontSize: 11 },
+  chartsBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 20 },
+  chartsBtnIcon: { fontSize: 24 },
+  chartsBtnTitle: { fontSize: 13, fontWeight: '700' },
+  chartsBtnSub: { fontSize: 11, marginTop: 2 },
+  chartsBtnArrow: { fontSize: 15 },
+  sectionTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
+  achievementsWrap: { borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 20 },
+  achieveHeader: { marginBottom: 12 },
+  achieveCount: { fontSize: 11, marginBottom: 6 },
+  achieveProgressTrack: { height: 4, borderRadius: 999, overflow: 'hidden' },
+  achieveProgressFill: { height: '100%', borderRadius: 999 },
+  achieveGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  achieveCard: { width: '30%', borderRadius: 14, borderWidth: 1, padding: 12, alignItems: 'center', gap: 4, position: 'relative' },
+  achieveIcon: { fontSize: 24 },
+  achieveName: { fontSize: 9, textAlign: 'center', fontWeight: '500' },
+  achieveLock: { position: 'absolute', top: 4, right: 4, fontSize: 10 },
+  settingsWrap: { borderRadius: 20, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  settingIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  settingIcon: { fontSize: 18 },
+  settingLabel: { fontSize: 14, fontWeight: '600' },
+  settingValue: { fontSize: 12, marginTop: 2 },
+  settingArrow: { fontSize: 15 },
+  levelBtns: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  levelBtn: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1 },
+  levelBtnText: { fontSize: 11, fontWeight: '600' },
+  appInfo: { alignItems: 'center', paddingVertical: 20 },
+  appInfoTitle: { fontSize: 13, fontWeight: '700' },
+  appInfoSub: { fontSize: 11, marginTop: 4 },
+});
