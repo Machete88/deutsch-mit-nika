@@ -1,0 +1,19 @@
+const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
+const path = require("path");
+
+const config = getDefaultConfig(__dirname);
+
+// Add the react-native-css-interop cache directory to watchFolders
+// to fix SHA-1 error during web export
+config.watchFolders = [
+  ...(config.watchFolders || []),
+  path.resolve(__dirname, "node_modules/react-native-css-interop/.cache"),
+];
+
+module.exports = withNativeWind(config, {
+  input: "./global.css",
+  // Force write CSS to file system instead of virtual modules
+  // This fixes iOS styling issues in development mode
+  forceWriteFileSystem: true,
+});
