@@ -32,9 +32,20 @@ function NikaTabIcon({ focused }: { focused: boolean }) {
 }
 
 function TabIcon({ icon, color, focused }: { icon: string; color: string; focused: boolean }) {
+  const { colors } = useNikaTheme();
   return (
-    <View style={[styles.tabIconWrap, focused && { backgroundColor: color + '1A' }]}>
-      <IconSymbol size={22} name={icon as any} color={color} />
+    <View style={[
+      styles.tabIconWrap,
+      focused && {
+        backgroundColor: color + '22',
+        borderRadius: 10,
+        shadowColor: color,
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 0 },
+      },
+    ]}>
+      <IconSymbol size={24} name={icon as any} color={color} />
     </View>
   );
 }

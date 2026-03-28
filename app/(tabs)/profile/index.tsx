@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const { stats } = useStatistics();
   const { achievements } = useAchievements();
   const { notifSettings, permissionStatus, requestPermissions, updateNotifSettings, sendTestNotification } = useNotifications();
-  const { colors, font, space, radius, isDark } = useNikaTheme();
+  const { colors, font, space, radius, isDark, fontSizeLevel, setFontSizeLevel, fs } = useNikaTheme();
 
   const unlockedAchievements = achievements.filter((a: any) => a.isUnlocked);
 
@@ -167,14 +167,17 @@ export default function ProfileScreen() {
                 {(['small', 'normal', 'large'] as const).map(size => (
                   <Pressable
                     key={size}
-                    onPress={() => updateSettings({ fontSizeLevel: size })}
+                    onPress={() => {
+                      setFontSizeLevel(size);
+                      updateSettings({ fontSizeLevel: size });
+                    }}
                     style={[
                       styles.levelBtn,
                       { backgroundColor: colors.glass2, borderColor: colors.glassBorder },
-                      settings.fontSizeLevel === size && { backgroundColor: colors.purple600, borderColor: colors.purple500 },
+                      fontSizeLevel === size && { backgroundColor: colors.purple600, borderColor: colors.purple500 },
                     ]}
                   >
-                    <Text style={[styles.levelBtnText, { color: settings.fontSizeLevel === size ? '#FFF' : colors.textMuted }]}>
+                    <Text style={[styles.levelBtnText, { color: fontSizeLevel === size ? '#FFF' : colors.textMuted, fontSize: size === 'small' ? 11 : size === 'large' ? 15 : 13 }]}>
                       {FONT_SIZE_LABELS[size]}
                     </Text>
                   </Pressable>

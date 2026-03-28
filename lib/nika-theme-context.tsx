@@ -1,13 +1,22 @@
 /**
  * Nika Theme Context
- * Provides dark/light mode switching with AsyncStorage persistence.
- * Use `useNikaTheme()` in any screen to get current colors and toggle.
+ * Provides dark/light mode switching + font size scaling with AsyncStorage persistence.
  */
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { THEME_COLORS, ThemeColors, ThemeMode, DS_FONT, DS_SPACE, DS_RADIUS, DS_SHADOW, DS_GRADIENT } from '@/constants/design';
 
-const STORAGE_KEY = 'nika_theme_mode';
+const STORAGE_KEY_THEME = 'nika_theme_mode';
+const STORAGE_KEY_FONT = 'nika_font_size';
+
+export type FontSizeLevel = 'small' | 'normal' | 'large';
+
+// Font scale multipliers
+const FONT_SCALE: Record<FontSizeLevel, number> = {
+  small: 0.88,
+  normal: 1.0,
+  large: 1.18,
+};
 
 interface NikaThemeContextType {
   mode: ThemeMode;
@@ -20,25 +29,46 @@ interface NikaThemeContextType {
   gradient: typeof DS_GRADIENT;
   toggleTheme: () => void;
   setTheme: (mode: ThemeMode) => void;
+  // Font size
+  fontSizeLevel: FontSizeLevel;
+  setFontSizeLevel: (level: FontSizeLevel) => void;
+  fontScale: number;
+  /** Scale a fontSize value by the current fontScale */
+  fs: (base: number) => number;
 }
 
 const NikaThemeContext = createContext<NikaThemeContextType | undefined>(undefined);
 
 export function NikaThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>('dark');
+  const [fontSizeLevel, setFontSizeLevelState] = useState<FontSizeLevel>('normal');
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(stored => {
-      if (stored === 'light' || stored === 'dark') setMode(stored);
+    Promise.all([
+      AsyncStorage.getItem(STORAGE_KEY_THEME),
+      AsyncStorage.getItem(STORAGE_KEY_FONT),
+    ]).then(([storedTheme, storedFont]) => {
+      if (storedTheme === 'light' || storedTheme === 'dark') setMode(storedTheme);
+      if (storedFont === 'small' || storedFont === 'normal' || storedFont === 'large') {
+        setFontSizeLevelState(storedFont as FontSizeLevel);
+      }
     });
   }, []);
 
   const setTheme = (newMode: ThemeMode) => {
     setMode(newMode);
-    AsyncStorage.setItem(STORAGE_KEY, newMode);
+    AsyncStorage.setItem(STORAGE_KEY_THEME, newMode);
   };
 
   const toggleTheme = () => setTheme(mode === 'dark' ? 'light' : 'dark');
+
+  const setFontSizeLevel = (level: FontSizeLevel) => {
+    setFontSizeLevelState(level);
+    AsyncStorage.setItem(STORAGE_KEY_FONT, level);
+  };
+
+  const fontScale = FONT_SCALE[fontSizeLevel];
+  const fs = useMemo(() => (base: number) => Math.round(base * fontScale), [fontScale]);
 
   const value: NikaThemeContextType = {
     mode,
@@ -51,6 +81,10 @@ export function NikaThemeProvider({ children }: { children: ReactNode }) {
     gradient: DS_GRADIENT,
     toggleTheme,
     setTheme,
+    fontSizeLevel,
+    setFontSizeLevel,
+    fontScale,
+    fs,
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { ChatMessage, CorrectionCard } from './nika-types';
 
 interface NikaChatContextValue {
@@ -14,8 +14,9 @@ interface NikaChatContextValue {
 
 const NikaChatContext = createContext<NikaChatContextValue | null>(null);
 
+// ── Nika System Prompts ──────────────────────────────────────────────────────
 function buildNikaSystemPrompt(mode: 'coach' | 'live' | 'roleplay', scenarioId?: string | null): string {
-  const base = `Du bist Nika, ein weibliches Chihuahua-Maskottchen und KI-Deutsch-Coach. 
+  const base = `Du bist Nika, ein weibliches Chihuahua-Maskottchen und KI-Deutsch-Coach.
 Du bist warmherzig, frech (aber nie gemein), sehr schlau, motivierend und charmant.
 Du sprichst einfach, klar und motivierend. Niemals trocken oder roboterhaft.
 Du antwortest IMMER auf Deutsch (mit Englisch-Übersetzungen wenn nötig für A1/A2 Lerner).
@@ -33,56 +34,70 @@ Nach jeder Nutzerantwort mit Fehlern, antworte im Format:
 
   if (mode === 'live') {
     return `${base}
-Modus: Live-Gespräch. Führe eine echte Unterhaltung. Stelle Rückfragen. Halte den Dialog am Laufen.
-Korrigiere Fehler kurz und mach weiter mit dem Gespräch.`;
+Modus: Live-Gespräch. Führe eine echte, lebendige Unterhaltung auf Deutsch.
+Stelle immer eine Rückfrage um den Dialog am Laufen zu halten.
+Korrigiere Fehler sehr kurz in Klammern (Korrektur: ...) und mach sofort weiter.
+Halte Antworten kurz und gesprächig (2-4 Sätze).`;
   }
 
   if (mode === 'roleplay') {
     const scenarios: Record<string, string> = {
-      cafe: 'Du bist eine freundliche Kellnerin in einem deutschen Café. Begrüße den Gast und nimm die Bestellung auf.',
+      cafe: 'Du bist eine freundliche Kellnerin in einem deutschen Café. Begrüße den Gast herzlich und nimm die Bestellung auf.',
       arzt: 'Du bist eine Ärztin. Frage nach den Symptomen und gib Ratschläge.',
       hotel: 'Du bist eine Rezeptionistin in einem Hotel. Hilf dem Gast beim Einchecken.',
-      smalltalk: 'Du bist Nikas Freundin. Unterhalte dich über den Alltag.',
+      smalltalk: 'Du bist Nikas Freundin. Unterhalte dich über den Alltag, Hobbys und das Wetter.',
       pruefung: 'Du bist eine Prüferin für die Deutschprüfung B1. Stelle typische Prüfungsfragen.',
-      bewerbung: 'Du bist eine Personalerin. Führe ein Bewerbungsgespräch.',
+      bewerbung: 'Du bist eine Personalerin. Führe ein freundliches Bewerbungsgespräch.',
     };
-    const roleDesc = scenarioId ? (scenarios[scenarioId] ?? '') : '';
+    const roleDesc = scenarioId ? (scenarios[scenarioId] ?? 'Führe ein freies Gespräch auf Deutsch.') : 'Führe ein freies Gespräch auf Deutsch.';
     return `${base}
 Modus: Rollenspiel. ${roleDesc}
-Bleibe in deiner Rolle. Korrigiere Fehler am Ende jeder Antwort kurz.`;
+Bleibe konsequent in deiner Rolle. Korrigiere Fehler am Ende jeder Antwort kurz mit: (Korrektur: ...)`;
   }
 
   return base;
 }
 
+// ── API Call via OpenAI directly (with dangerouslyAllowBrowser) ──────────────
 async function callNikaAPI(
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
 ): Promise<{ reply: string; correction?: CorrectionCard }> {
   try {
-    const { OpenAI } = await import('openai');
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY ?? '',
-      dangerouslyAllowBrowser: true,
+    // Use fetch directly to avoid import issues in web builds
+    const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? '';
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.map(m => ({ role: m.role === 'nika' ? 'assistant' : m.role, content: m.content })),
+        ],
+        max_tokens: 500,
+        temperature: 0.85,
+      }),
     });
 
-    const response = await client.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      ],
-      max_tokens: 400,
-      temperature: 0.8,
-    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('[NikaChat] API error:', response.status, errText);
+      throw new Error(`API ${response.status}`);
+    }
 
-    const raw = response.choices[0]?.message?.content ?? 'Ups, ich konnte nicht antworten. Versuch es nochmal!';
+    const data = await response.json();
+    const raw: string = data.choices?.[0]?.message?.content ?? 'Ups, ich konnte nicht antworten. Versuch es nochmal! 🐾';
 
     // Parse correction if present
     let correction: CorrectionCard | undefined;
-    const corrMatch = raw.match(/\[KORREKTUR\]\s*(.+?)(?:\[|$)/s);
-    const natMatch = raw.match(/\[NATÜRLICHER\]\s*(.+?)(?:\[|$)/s);
-    const warumMatch = raw.match(/\[WARUM\]\s*(.+?)(?:\[|$)/s);
+    const corrMatch = raw.match(/\[KORREKTUR\]\s*(.+?)(?=\[|$)/s);
+    const natMatch = raw.match(/\[NATÜRLICHER\]\s*(.+?)(?=\[|$)/s);
+    const warumMatch = raw.match(/\[WARUM\]\s*(.+?)(?=\[|$)/s);
 
     if (corrMatch || natMatch) {
       correction = {
@@ -95,29 +110,76 @@ async function callNikaAPI(
 
     // Clean reply from correction markers
     const cleanReply = raw
-      .replace(/\[KORREKTUR\].*?(?=\[|$)/s, '')
-      .replace(/\[NATÜRLICHER\].*?(?=\[|$)/s, '')
-      .replace(/\[WARUM\].*?(?=\[|$)/s, '')
+      .replace(/\[KORREKTUR\][\s\S]*?(?=\[|$)/g, '')
+      .replace(/\[NATÜRLICHER\][\s\S]*?(?=\[|$)/g, '')
+      .replace(/\[WARUM\][\s\S]*?(?=\[|$)/g, '')
       .trim();
 
     return { reply: cleanReply || raw, correction };
   } catch (err) {
     console.error('[NikaChat] API error:', err);
+    // Fallback: try tRPC server
+    return callNikaTRPC(messages, systemPrompt);
+  }
+}
+
+// ── Fallback: tRPC server call ───────────────────────────────────────────────
+async function callNikaTRPC(
+  messages: Array<{ role: string; content: string }>,
+  _systemPrompt: string
+): Promise<{ reply: string; correction?: CorrectionCard }> {
+  try {
+    const serverMessages = messages.map(m => ({
+      role: (m.role === 'nika' ? 'assistant' : 'user') as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    const response = await fetch('/api/trpc/nika.chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        json: {
+          messages: serverMessages,
+          mode: 'coach',
+        },
+      }),
+    });
+
+    if (!response.ok) throw new Error('tRPC failed');
+    const data = await response.json();
+    const result = data?.result?.data?.json;
     return {
-      reply: 'Kleiner technischer Fehler. Aber ich bin noch hier! Versuch es nochmal.',
+      reply: result?.reply ?? 'Ich bin gleich wieder da! 🐾',
+      correction: result?.correction,
+    };
+  } catch {
+    return {
+      reply: 'Kleiner technischer Fehler. Aber ich bin noch hier! Versuch es nochmal. 🐾',
     };
   }
 }
 
+// ── Provider ─────────────────────────────────────────────────────────────────
 export function NikaChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setModeState] = useState<'coach' | 'live' | 'roleplay'>('coach');
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+
+  // Keep ref in sync for async callbacks
+  const updateMessages = useCallback((updater: (prev: ChatMessage[]) => ChatMessage[]) => {
+    setMessages(prev => {
+      const next = updater(prev);
+      messagesRef.current = next;
+      return next;
+    });
+  }, []);
 
   const setMode = useCallback((newMode: 'coach' | 'live' | 'roleplay') => {
     setModeState(newMode);
     setMessages([]);
+    messagesRef.current = [];
     setActiveScenarioId(null);
   }, []);
 
@@ -125,11 +187,12 @@ export function NikaChatProvider({ children }: { children: React.ReactNode }) {
     setModeState('roleplay');
     setActiveScenarioId(scenarioId);
     setMessages([]);
+    messagesRef.current = [];
     setIsLoading(true);
 
     const systemPrompt = buildNikaSystemPrompt('roleplay', scenarioId);
     const { reply } = await callNikaAPI(
-      [{ role: 'user', content: 'Starte das Rollenspiel.' }],
+      [{ role: 'user', content: 'Starte das Rollenspiel mit einer kurzen Begrüßung.' }],
       systemPrompt
     );
 
@@ -139,9 +202,9 @@ export function NikaChatProvider({ children }: { children: React.ReactNode }) {
       text: reply,
       timestamp: Date.now(),
     };
-    setMessages([nikaMsg]);
+    updateMessages(() => [nikaMsg]);
     setIsLoading(false);
-  }, []);
+  }, [updateMessages]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -152,11 +215,11 @@ export function NikaChatProvider({ children }: { children: React.ReactNode }) {
         timestamp: Date.now(),
       };
 
-      setMessages(prev => [...prev, userMsg]);
+      updateMessages(prev => [...prev, userMsg]);
       setIsLoading(true);
 
       const systemPrompt = buildNikaSystemPrompt(mode, activeScenarioId);
-      const history = [...messages, userMsg].map(m => ({
+      const history = [...messagesRef.current, userMsg].map(m => ({
         role: m.role === 'nika' ? 'assistant' : 'user',
         content: m.text,
       }));
@@ -171,14 +234,15 @@ export function NikaChatProvider({ children }: { children: React.ReactNode }) {
         correction,
       };
 
-      setMessages(prev => [...prev, nikaMsg]);
+      updateMessages(prev => [...prev, nikaMsg]);
       setIsLoading(false);
     },
-    [messages, mode, activeScenarioId]
+    [mode, activeScenarioId, updateMessages]
   );
 
   const clearChat = useCallback(() => {
     setMessages([]);
+    messagesRef.current = [];
   }, []);
 
   return (
