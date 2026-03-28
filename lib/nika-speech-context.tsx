@@ -73,11 +73,15 @@ export function NikaSpeechProvider({ children }: { children: React.ReactNode }) 
       soundRef.current = null;
     }
 
-    // expo-speech stoppen
-    try {
-      const Speech = require('expo-speech');
-      Speech.stop();
-    } catch {}
+    // expo-speech stoppen (nur iOS/Android, nicht Web)
+    if (Platform.OS !== 'web') {
+      try {
+        const Speech = require('expo-speech');
+        if (Speech && typeof Speech.stop === 'function') {
+          Speech.stop();
+        }
+      } catch {}
+    }
   }, [stopMouthAnim]);
 
   const speak = useCallback(async (text: string, language: 'de' | 'ru' = 'de') => {
@@ -149,28 +153,34 @@ export function NikaSpeechProvider({ children }: { children: React.ReactNode }) 
       console.warn('[TTS] Server TTS failed, using expo-speech fallback:', err);
     }
 
-    // Fallback: expo-speech
-    try {
-      const Speech = require('expo-speech');
-      const langCode = language === 'ru' ? 'ru-RU' : 'de-DE';
-      Speech.speak(text, {
-        language: langCode,
-        pitch: 1.2,   // Etwas höher für Chihuahua-Charakter
-        rate: 0.9,
-        onDone: () => {
-          setIsSpeaking(false);
-          stopMouthAnim();
-        },
-        onError: () => {
-          setIsSpeaking(false);
-          stopMouthAnim();
-        },
-      });
-    } catch (speechErr) {
-      console.error('[TTS] expo-speech also failed:', speechErr);
-      setIsSpeaking(false);
-      stopMouthAnim();
+    // Fallback: expo-speech (nur iOS/Android)
+    if (Platform.OS !== 'web') {
+      try {
+        const Speech = require('expo-speech');
+        if (Speech && typeof Speech.speak === 'function') {
+          const langCode = language === 'ru' ? 'ru-RU' : 'de-DE';
+          Speech.speak(text, {
+            language: langCode,
+            pitch: 1.1,
+            rate: 0.9,
+            onDone: () => {
+              setIsSpeaking(false);
+              stopMouthAnim();
+            },
+            onError: () => {
+              setIsSpeaking(false);
+              stopMouthAnim();
+            },
+          });
+          return;
+        }
+      } catch (speechErr) {
+        console.warn('[TTS] expo-speech failed:', speechErr);
+      }
     }
+    // Wenn alles fehlschlägt: State zurücksetzen
+    setIsSpeaking(false);
+    stopMouthAnim();
   }, [stop, startMouthAnim, stopMouthAnim]);
 
   // Nur sprechen wenn Auto-TTS aktiviert

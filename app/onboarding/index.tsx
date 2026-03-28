@@ -92,13 +92,13 @@ export default function OnboardingScreen() {
             {/* Content */}
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 32 }}>
               <Text style={{ fontSize: 80 }}>{current.emoji}</Text>
-              <Text style={{ fontSize: fontSizes['3xl'], fontWeight: '800', color: colors.foreground, textAlign: 'center', marginTop: 20 }}>
+              <Text style={{ fontSize: fontSizes['3xl'], fontWeight: '800', color: '#1A0A3E', textAlign: 'center', marginTop: 20 }}>
                 {current.title}
               </Text>
-              <Text style={{ fontSize: fontSizes.base, color: colors.muted, textAlign: 'center', marginTop: 8 }}>
+              <Text style={{ fontSize: fontSizes.base, color: '#6B5B8A', textAlign: 'center', marginTop: 8, fontWeight: '600' }}>
                 {current.subtitle}
               </Text>
-              <Text style={{ fontSize: fontSizes.base, color: colors.foreground, textAlign: 'center', marginTop: 16, lineHeight: fontSizes.base * 1.6 }}>
+              <Text style={{ fontSize: fontSizes.base, color: '#2D1A5E', textAlign: 'center', marginTop: 16, lineHeight: fontSizes.base * 1.6 }}>
                 {current.description}
               </Text>
 

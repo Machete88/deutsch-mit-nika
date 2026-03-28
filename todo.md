@@ -134,3 +134,9 @@
 - [x] Chat-Screen: Auto-Vorlesen wenn accessibilityAutoTTS aktiviert
 - [x] Profil-Screen: Barrierefreiheit-Sektion mit Auto-Vorlesen-Toggle
 - [x] Light-Mode-Kontrast verbessert (textPrimary, textMuted, cardBg)
+
+## Runde 5 Bug-Fixes (29.03.2026)
+- [x] Icons in Action-Cards vergrößern (Home-Screen + Nika-Tab)
+- [x] KI System-Prompt: Erklärungen auf Russisch statt Englisch
+- [x] expo-speech Crash auf Android fixen (SpeechSynthesisUtterance + cancel)
+- [x] Onboarding Light-Mode Kontrast reparieren
