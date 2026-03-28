@@ -127,7 +127,6 @@ function TabsContent() {
           ),
         }}
       />
-      <Tabs.Screen name="speak" options={{ href: null }} />
     </Tabs>
   );
 }

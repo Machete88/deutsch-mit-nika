@@ -49,8 +49,9 @@ export default function HomeScreen() {
   return (
     <View style={[{ flex: 1, backgroundColor: colors.bg1 }, { paddingTop: insets.top }]}>
       {/* Ambient orbs */}
-      <View style={[styles.orb1, { backgroundColor: colors.orb1 }]} pointerEvents="none" />
-      <View style={[styles.orb2, { backgroundColor: colors.orb2 }]} pointerEvents="none" />
+      <View style={[styles.orb1, { backgroundColor: 'rgba(124,58,237,0.18)' }]} pointerEvents="none" />
+      <View style={[styles.orb2, { backgroundColor: 'rgba(168,85,247,0.14)' }]} pointerEvents="none" />
+      <View style={{ position: 'absolute', bottom: 200, right: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(34,211,238,0.08)' }} pointerEvents="none" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -215,8 +216,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  orb1: { position: 'absolute', top: -100, right: -80, width: 300, height: 300, borderRadius: 150 },
-  orb2: { position: 'absolute', top: 300, left: -100, width: 220, height: 220, borderRadius: 110 },
+  orb1: { position: 'absolute', top: -120, right: -100, width: 380, height: 380, borderRadius: 190, opacity: 0.8 },
+  orb2: { position: 'absolute', top: 320, left: -120, width: 300, height: 300, borderRadius: 150, opacity: 0.7 },
   scroll: { paddingHorizontal: 16, paddingTop: 12 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   greeting: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
   xpPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   xpPillText: { fontSize: 11, fontWeight: '600' },
   avatarBtn: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  nikaCard: { borderRadius: 24, borderWidth: 1, marginBottom: 16, overflow: 'hidden', minHeight: 130 },
+  nikaCard: { borderRadius: 24, borderWidth: 1, marginBottom: 16, overflow: 'hidden', minHeight: 130, shadowColor: '#A855F7', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 12 },
   nikaCardInner: { flexDirection: 'row', alignItems: 'center', padding: 12 },
   nikaImg: { width: 110, height: 130 },
   nikaTextBlock: { flex: 1, paddingLeft: 12, paddingRight: 8, paddingVertical: 8 },
@@ -236,12 +237,12 @@ const styles = StyleSheet.create({
   nikaCTA: { marginTop: 12, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7, alignSelf: 'flex-start' },
   nikaCTAText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  statCard: { flex: 1, borderRadius: 16, borderWidth: 1, paddingVertical: 12, alignItems: 'center', gap: 4 },
+  statCard: { flex: 1, borderRadius: 16, borderWidth: 1, paddingVertical: 12, alignItems: 'center', gap: 4, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 4 },
   statValue: { fontSize: 17, fontWeight: '800' },
   statLabel: { fontSize: 11, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 },
   sectionTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-  actionCard: { width: '47.5%', borderRadius: 20, borderWidth: 1, padding: 16, minHeight: 120, position: 'relative', overflow: 'hidden' },
+  actionCard: { width: '47.5%', borderRadius: 20, borderWidth: 1, padding: 16, minHeight: 120, position: 'relative', overflow: 'hidden', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
   actionIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   actionIcon: { fontSize: 22 },
   actionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 3 },

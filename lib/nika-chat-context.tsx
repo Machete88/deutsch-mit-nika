@@ -58,25 +58,23 @@ Bleibe konsequent in deiner Rolle. Korrigiere Fehler am Ende jeder Antwort kurz 
   return base;
 }
 
-// ── API Call via OpenRouter (Kimi free model) ───────────────────────────────
-const OPENROUTER_API_KEY = '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';
-const OPENROUTER_MODEL = 'google/gemma-3-12b-it:free';
+// ── API Call via Venice AI ────────────────────────────────────────────────────────
+const VENICE_API_KEY = 'VENICE_ADMIN_KEY_AVbGKUW4HWpAfp0dpyeuaBsd169-VAfva59K87YMAI';
+const VENICE_MODEL = 'llama-3.3-70b';
 
 async function callNikaAPI(
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
 ): Promise<{ reply: string; correction?: CorrectionCard }> {
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://deutsch-mit-nika.netlify.app',
-        'X-Title': 'Deutsch mit Nika',
+        'Authorization': `Bearer ${VENICE_API_KEY}`,
       },
       body: JSON.stringify({
-        model: OPENROUTER_MODEL,
+        model: VENICE_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages.map(m => ({ role: m.role === 'nika' ? 'assistant' : m.role, content: m.content })),

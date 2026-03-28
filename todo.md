@@ -85,3 +85,11 @@
 - [ ] Restliche Bilder auf S3 hochladen und lokale Dateien verschieben
 - [ ] Checkpoint erstellen
 - [ ] Auf GitHub pushen (https://github.com/Machete88/deutsch-mit-nika)
+
+## Bug-Fixes (28.03.2026)
+- [x] KI-Integration reparieren (Venice AI API-Fehler im Server)
+- [x] Live-Gespräch fixieren (Mikrofon + KI-Antwort)
+- [x] speak/index Tab-Name in Tab-Bar bereinigen
+- [x] Unmatched Route Fehler beheben
+- [x] Design: Neon-Glow-Effekte, Tab-Bar-Icons verbessern
+- [x] Home-Screen Design dem Screenshot-Design angleichen
