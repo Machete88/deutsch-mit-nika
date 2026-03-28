@@ -140,3 +140,9 @@
 - [x] KI System-Prompt: Erklärungen auf Russisch statt Englisch
 - [x] expo-speech Crash auf Android fixen (SpeechSynthesisUtterance + cancel)
 - [x] Onboarding Light-Mode Kontrast reparieren
+
+## Runde 6 Bug-Fixes (29.03.2026)
+- [ ] Englischen Willkommen-Text im Chat entfernen (hardcodierter Begrüßungssatz)
+- [ ] Tages-Missionen Icons und Schrift vergrößern (Nika-Tab)
+- [x] Sprach-Toggle im Profil reparieren (funktioniert nicht)
+- [ ] B1 Hören-Prüfung: Audio-Clips mit TTS + Multiple-Choice-Fragen implementieren

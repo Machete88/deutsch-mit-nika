@@ -149,6 +149,32 @@ export default function ProfileScreen() {
             <ThemeToggleRow />
           </View>
 
+          {/* Interface Language */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🌐</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: c.textPrimary }]}>Interface-Sprache</Text>
+              <Text style={[styles.settingValue, { color: c.textMuted }]}>Erklärungen & Hilfe</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {(['ru', 'de'] as const).map(lang => (
+                <Pressable
+                  key={lang}
+                  onPress={() => updateSettings({ language: lang })}
+                  style={[{
+                    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5,
+                    backgroundColor: settings.language === lang ? colors.purple600 : (isDark ? colors.glass2 : 'rgba(124,58,237,0.08)'),
+                    borderColor: settings.language === lang ? colors.purple500 : c.sectionBorder,
+                  }]}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: settings.language === lang ? '#FFF' : c.textSecondary }}>
+                    {lang === 'ru' ? '🇷🇺 RU' : '🇩🇪 DE'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
           {/* Level */}
           <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: c.rowBorder }]}>
             <View style={[styles.settingIconWrap, { backgroundColor: c.iconBg }]}><Text style={styles.settingIcon}>🎓</Text></View>

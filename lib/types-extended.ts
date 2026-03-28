@@ -11,6 +11,8 @@ export interface ExamQuestion {
   correctAnswer: string;
   explanation?: string;
   category?: string;
+  /** Nur für type='listening': Der deutsche Text der vorgelesen wird */
+  audioText?: string;
 }
 
 export interface ExamAnswerDetail {
