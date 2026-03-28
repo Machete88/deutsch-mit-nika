@@ -266,7 +266,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden', position: 'relative',
   },
   outfitRarityBar: { width: '100%', height: 3, marginBottom: DS.space[2] },
-  outfitAvatarWrap: { position: 'relative', marginBottom: 6 },
+  outfitAvatarWrap: {
+    position: 'relative', marginBottom: 6,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: DS.radius.md,
+    padding: 4,
+  },
   lockOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(5,3,15,0.6)',

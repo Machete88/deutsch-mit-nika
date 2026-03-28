@@ -58,28 +58,30 @@ Bleibe konsequent in deiner Rolle. Korrigiere Fehler am Ende jeder Antwort kurz 
   return base;
 }
 
-// ── API Call via OpenAI directly (with dangerouslyAllowBrowser) ──────────────
+// ── API Call via OpenRouter (Kimi free model) ───────────────────────────────
+const OPENROUTER_API_KEY = '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';
+const OPENROUTER_MODEL = 'google/gemma-3-12b-it:free';
+
 async function callNikaAPI(
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
 ): Promise<{ reply: string; correction?: CorrectionCard }> {
   try {
-    // Use fetch directly to avoid import issues in web builds
-    const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? '';
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://deutsch-mit-nika.netlify.app',
+        'X-Title': 'Deutsch mit Nika',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: OPENROUTER_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages.map(m => ({ role: m.role === 'nika' ? 'assistant' : m.role, content: m.content })),
         ],
-        max_tokens: 500,
+        max_tokens: 600,
         temperature: 0.85,
       }),
     });
