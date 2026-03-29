@@ -46,7 +46,7 @@ function TabIcon({ icon, color, focused }: { icon: string; color: string; focuse
         shadowOffset: { width: 0, height: 0 },
       },
     ]}>
-      <IconSymbol size={24} name={icon as any} color={color} />
+      <IconSymbol size={28} name={icon as any} color={color} />
     </View>
   );
 }
@@ -55,7 +55,7 @@ function TabsContent() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useNikaTheme();
   const bottomPadding = Platform.OS === 'web' ? 10 : Math.max(insets.bottom, 6);
-  const tabBarHeight = 62 + bottomPadding;
+  const tabBarHeight = 70 + bottomPadding;
 
   return (
     <Tabs
@@ -78,10 +78,10 @@ function TabsContent() {
           }),
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginTop: 1,
-          letterSpacing: 0.3,
+          fontSize: 13,
+          fontWeight: '700',
+          marginTop: 2,
+          letterSpacing: 0.2,
         },
       }}
     >
@@ -146,18 +146,18 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabIconWrap: {
-    width: 34, height: 34, borderRadius: 12,
+    width: 40, height: 40, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
   nikaWrap: {
-    width: 42, height: 42, borderRadius: 21,
+    width: 48, height: 48, borderRadius: 24,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, position: 'relative',
   },
   nikaGlowRing: {
     position: 'absolute', top: -4, left: -4, right: -4, bottom: -4,
-    borderRadius: 25, borderWidth: 1,
+    borderRadius: 28, borderWidth: 1,
   },
-  nikaEmoji: { fontSize: 20 },
-  nikaEmojiActive: { fontSize: 22 },
+  nikaEmoji: { fontSize: 24 },
+  nikaEmojiActive: { fontSize: 26 },
 });
